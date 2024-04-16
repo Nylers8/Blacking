@@ -3,7 +3,6 @@ import random
 import os
 
 from header import *
-#from Players import Player
 
 class Ball(pygame.sprite.Sprite):
     def __init__(self):
@@ -18,12 +17,11 @@ class Ball(pygame.sprite.Sprite):
         self.player1 = 0
         self.player2 = 0
 
-        #self.current_dir = os.path.dirname(os.path.abspath(__file__))
-        #self.SFX6 = pygame.mixer.Sound(self.current_dir+"\SFX\sfx-6.mp3")
-        #self.SFX10 = pygame.mixer.Sound(self.current_dir+"\SFX\sfx-10.mp3")
+        self.SFX_TouchPlayer = pygame.mixer.Sound("SFX\TouchPlayer.mp3")
+        self.SFX_TouchWall = pygame.mixer.Sound("SFX\TouchWall.mp3")
 
-        #self.SFX6.set_volume(sound_volume)
-        #self.SFX10.set_volume(sound_volume)
+        self.SFX_TouchPlayer.set_volume(volumeSound)
+        self.SFX_TouchWall.set_volume(volumeSound)
         
 
 
@@ -33,29 +31,33 @@ class Ball(pygame.sprite.Sprite):
             self.dy = bias
             self.dx = self.maxSpeed - abs(self.dy)
             self.maxSpeed += 0.0001
+            self.SFX_TouchPlayer.play()
 
         if self.rect.colliderect(self.player2.rect):
             bias = (self.rect.centery - self.player2.rect.centery) / self.player2.rect.height * self.maxSpeed * 1.5
             self.dy = bias
             self.dx = abs(self.dy) - self.maxSpeed
             self.maxSpeed += 0.0001
+            self.SFX_TouchPlayer.play()
 
 
     def TouchWall(self):
         if self.rect.right >= WIDTH and self.dx > 0:
             self.restartBall()
             self.player1.score+=1
+            self.SFX_TouchWall.play()
             
         if self.rect.left <= 0 and self.dx < 0:
             self.restartBall()
             self.player2.score+=1
+            self.SFX_TouchWall.play()
             
         if self.rect.top <= 0:
-            #self.SFX6.play()
             self.dy = abs(self.dy)
+            self.SFX_TouchWall.play()
         elif self.rect.bottom >= HEIGHT:
-            #self.SFX6.play()
             self.dy = -abs(self.dy)
+            self.SFX_TouchWall.play()
 
     def restartBall(self):
         self.rect.center = (WIDTH /2, HEIGHT / 2)

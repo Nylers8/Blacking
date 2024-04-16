@@ -3,28 +3,26 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import json
-import os
-from sklearn.preprocessing import LabelEncoder
-
-from pygame import sprite
+#import os
 
 
 class BlackCollman(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_hidden_layers, dropout_rate=0.5, learning_rate=0.0001, epochs = 10):
-        super(BlackCollman, self).__init__()
+        super(BlackCollman, self).__init__() 
 
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.hidden_layers = nn.ModuleList([nn.Linear(hidden_size, hidden_size) for _ in range(num_hidden_layers)])
-        self.dropout = nn.Dropout(dropout_rate)
-        self.relu = nn.ReLU()
-        self.fc_out = nn.Linear(hidden_size, output_size)  
+        self.fc1 = nn.Linear(input_size, hidden_size) # Создание связей между входными и скрытыми слоями 
+        self.hidden_layers = nn.ModuleList([nn.Linear(hidden_size, hidden_size) for _ in range(num_hidden_layers)]) # Создание скрытых слоев
+        self.dropout = nn.Dropout(dropout_rate) # От переобучения, делает нейроны нерабочими
+        self.relu = nn.ReLU() # Преобразует отрицательные значения в нулевые
+        self.fc_out = nn.Linear(hidden_size, output_size) # Связи между скрытыми слоями и выходными
         
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate) # Оптимизатор, говорит куда двигаться по градиентному спуску
+        self.criterion = nn.CrossEntropyLoss() # Просчитвает потери, насколько нейронка не права
 
         self.epochs = epochs
 
-    def forward(self, x):
+    # Как проходят данные в нейронки
+    def forward(self, x): 
         x = self.relu(self.fc1(x))
         for layer in self.hidden_layers:
             x = self.relu(layer(x))
@@ -32,6 +30,7 @@ class BlackCollman(nn.Module):
         x = self.fc_out(x)
         return x
 
+    # Загрузка данных из файла
     def load_data(self):
         with open("game_data.json", 'r') as f:
             self.game_data = json.load(f)
@@ -57,35 +56,37 @@ class BlackCollman(nn.Module):
             # Добавление метки (player_x) в список меток
             self.y.append(data_entry["action"])
 
-    def train(self, batch_size=32):
+    # Тренировка модели
+    def train(self, batch_size=60):
         # Преобразование данных в тензоры
-        X_tensor = torch.tensor(self.X, dtype=torch.float32)
-        y_tensor = torch.tensor(self.y, dtype=torch.long)
+        X_tensor = torch.tensor(self.X, dtype=torch.float32) # Тензор признаков
+        y_tensor = torch.tensor(self.y, dtype=torch.long) # Тензор меток
         
-        dataset = torch.utils.data.TensorDataset(X_tensor, y_tensor)
+        dataset = torch.utils.data.TensorDataset(X_tensor, y_tensor) # Данные(признаки и метки)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
         # Обучение модели
-        for epoch in range(self.epochs):
-            running_loss = 0.0
-            for inputs, labels in dataloader:
-                self.optimizer.zero_grad()
-                outputs = self(inputs)
-                loss = self.criterion(outputs, labels)
-                loss.backward()
-                self.optimizer.step()
-                running_loss += loss.item()
+        for epoch in range(self.epochs): # Обучение модели
+            running_loss = 0.0 # Потери
+            for inputs, labels in dataloader: # Проход по данным
+                self.optimizer.zero_grad() # Обновляет оптимизатор, говорит смотерть в другие стороны
+                outputs = self(inputs) # Предсказание модели
+                loss = self.criterion(outputs, labels) # Насколько она не права
+                loss.backward() # Насколько влияет каждый параметр на предсказание
+                self.optimizer.step() # Оптимизация
+                running_loss += loss.item() # Добавление к потерям
             print(f"Epoch {epoch+1}/{self.epochs}, Loss: {running_loss}")
 
+    # Предсказание модели
     def predict_action(self, input_data):
         # Предсказание действия для входных данных
-        with torch.no_grad():
-            input_tensor = torch.tensor(input_data, dtype=torch.float32)
-            output = self(input_tensor)
-            _, predicted = torch.max(output, 1)
-            return predicted.item()
+        with torch.no_grad(): # Не обновлять веса
+            input_tensor = torch.tensor(input_data, dtype=torch.float32) # Входные данные
+            output = self(input_tensor) # Выходные данные
+            _, predicted = torch.max(output, 1) # Данные в виде числа
+            return predicted.item() # Предсказанное действие
     
-
+    #Получение данных от игры
     def gather_game_data(self, ball_x, ball_y, ball_dx, ball_dy, player_y, screen_width, screen_height):
         # Формируем game_state
         game_state = []
@@ -97,10 +98,11 @@ class BlackCollman(nn.Module):
             
 
 
-
+    # Сохранение модели
     def save_train(self):
         torch.save(self.state_dict(), "trainModel")
 
+    # Загрузка
     def load_train(self):
         self.load_state_dict(torch.load("trainModel"))
 

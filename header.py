@@ -3,5 +3,5 @@ HEIGHT = 800
 
 FPS = 60
 
-scorePlayer1 = 0
-scorePlayer2 = 0
+volumeSound = 0.15
+volumeMusic = 0.1
