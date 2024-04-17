@@ -8,7 +8,10 @@ import json
 
 class BlackCollman(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_hidden_layers, dropout_rate=0.5, learning_rate=0.0001, epochs = 10):
-        super(BlackCollman, self).__init__() 
+        super(BlackCollman, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Using device:", self.device)
+        self.to(self.device)
 
         self.fc1 = nn.Linear(input_size, hidden_size) # Создание связей между входными и скрытыми слоями 
         self.hidden_layers = nn.ModuleList([nn.Linear(hidden_size, hidden_size) for _ in range(num_hidden_layers)]) # Создание скрытых слоев
@@ -22,7 +25,8 @@ class BlackCollman(nn.Module):
         self.epochs = epochs
 
     # Как проходят данные в нейронки
-    def forward(self, x): 
+    def forward(self, x):
+        x = x.to(self.device)
         x = self.relu(self.fc1(x))
         for layer in self.hidden_layers:
             x = self.relu(layer(x))
@@ -68,7 +72,8 @@ class BlackCollman(nn.Module):
         # Обучение модели
         for epoch in range(self.epochs): # Обучение модели
             running_loss = 0.0 # Потери
-            for inputs, labels in dataloader: # Проход по данным
+            for inputs, labels in dataloader:
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
                 self.optimizer.zero_grad() # Обновляет оптимизатор, говорит смотерть в другие стороны
                 outputs = self(inputs) # Предсказание модели
                 loss = self.criterion(outputs, labels) # Насколько она не права
